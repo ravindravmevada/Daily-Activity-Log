@@ -28,6 +28,6 @@ function onControlsEdit(e) {
   handleTabVisibility(sheet, row, col, e);
   handleTabVisibilityResetToDefault(sheet, row, col, e);
   handleRguEnableFeature(sheet, row, col, e);
-  handleRguUnmergeNow(sheet, row, col, e);
   handleRguResetToDefault(sheet, row, col, e);
+  handleRguUnmergeNow(sheet, row, col, e);
 }
