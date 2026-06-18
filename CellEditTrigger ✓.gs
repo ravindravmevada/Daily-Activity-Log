@@ -5,10 +5,7 @@ function onEdit(e) {
   const row = editedCell.getRow();
   const col = editedCell.getColumn();
 
-  if (sheetName === CONTROLS_SHEET_NAME) {
-    handleColumnWidthSync(sheet, row, col);
-    return;
-  }
+  if (sheetName === CONTROLS_SHEET_NAME) return;
 
   if (SHEET_NAMES.DAILY_ACTIVITY_LOG.some(name => sheetName.includes(name))) {
     routeDailyLogTickbox(sheet, row, col);
