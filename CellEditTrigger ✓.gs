@@ -6,7 +6,6 @@ function onEdit(e) {
   const col = editedCell.getColumn();
 
   if (sheetName === CONTROLS_SHEET_NAME) {
-    handleTabVisibility(sheet, row, col, e);
     handleColumnWidthSync(sheet, row, col);
     return;
   }
