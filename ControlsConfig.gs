@@ -63,14 +63,17 @@ const ROW_GROUP_UNMERGER = {
   UNMERGED_ROW_LAST_COL: "L"
 };
 
-const COLUMN_WIDTH_SYNC = {
-  ENABLE_TICKBOX: "D24",
-  RESIZE_NOW_TICKBOX: "D25",
+const COLUMN_WIDTH_APPLICATOR = {
+  ENABLE_FEATURE_TICKBOX: "CWA_ENABLE_FEATURE",
+  FEATURE_STATUS_CELL: "CWA_FEATURE_STATUS",
+  APPLY_NOW_TICKBOX: "CWA_APPLY_NOW",
+  OPERATION_RESULT_CELL: "CWA_OPERATION_RESULT",
+  RESET_TO_DEFAULT_TICKBOX: "CWA_RESET_TO_DEFAULT",
   TARGET_SHEETS: [
     "Central Dropdown Imported - Linked Data",
     "Dropdown Source - Linked Data",
     "Central Dropdown Imported - Unlinked Data",
-    "Dropdown Source - Unlinked Data",
+    "Dropdown Source - Unlinked Data"
   ],
   WIDTH_ROW: 1
 };
