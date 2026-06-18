@@ -13,8 +13,8 @@ function resequenceDColumnAndSubNumbers(sheet) {
 
   const indicatorRange = sheet.getRange(dataStartRow, dataRowIndicatorColIndex, lastRow - dataStartRow + 1, 1);
   const indicatorValidations = indicatorRange.getDataValidations();
-
   const isDataRow = {};
+
   for (let i = 0; i < indicatorValidations.length; i++) {
     const actualRow = dataStartRow + i;
     const validation = indicatorValidations[i][0];
@@ -25,9 +25,9 @@ function resequenceDColumnAndSubNumbers(sheet) {
 
   const dRange = sheet.getRange(dataStartRow, incrementColIndex, lastRow - dataStartRow + 1, 1);
   const dMerges = dRange.getMergedRanges();
-
   const mergeTopRows = {};
   const mergeInfo = {};
+
   for (let i = 0; i < dMerges.length; i++) {
     const m = dMerges[i];
     const topRow = m.getRow();
@@ -50,7 +50,7 @@ function resequenceDColumnAndSubNumbers(sheet) {
       const groupNumRows = mergeInfo[r];
       for (let sr = 0; sr < groupNumRows; sr++) {
         const positionFromBottom = groupNumRows - sr;
-        const subNumber = parseFloat(counter + "." + positionFromBottom);
+        const subNumber = counter + "." + positionFromBottom;
         sheet.getRange(r + sr, subIncrementColIndex).setValue(subNumber);
       }
     }
