@@ -118,28 +118,58 @@ function handleRguUnmergeNow(controlsSheet, row, col, e) {
 }
 
 function executeRowGroupUnmerge(sheet, startRow, endRow) {
-  const lastCol = sheet.getLastColumn();
   const numRows = endRow - startRow + 1;
-
-  sheet.getRange(startRow, 1, numRows, lastCol).breakApart();
+  const colAToL = columnLetterToIndex(ROW_GROUP_UNMERGER.UNMERGED_ROW_LAST_COL);
 
   const categoryCol = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.GROUP_LABEL_MERGE_START_COL);
-  const subcategoryCol = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.GROUP_LABEL_MERGE_END_COL);
-  const startHasCol = columnLetterToIndex(DAILY_ACTIVITY_LOG_TIMESTAMP_GROUPS[0].hasTimestampCol);
-  const endHasCol = columnLetterToIndex(DAILY_ACTIVITY_LOG_TIMESTAMP_GROUPS[1].hasTimestampCol);
-  const startTsCol = columnLetterToIndex(DAILY_ACTIVITY_LOG_TIMESTAMP_GROUPS[0].timestampCol);
-  const endTsCol = columnLetterToIndex(DAILY_ACTIVITY_LOG_TIMESTAMP_GROUPS[1].timestampCol);
-  const activityTypeCol = columnLetterToIndex(DAILY_ACTIVITY_LOG_DURATION_COLS.ACTIVITY_TYPE_COL);
+  const subcatStartCol = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.UNMERGED_ROW_DROPDOWN_START_COL);
+  const subcatEndCol = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.UNMERGED_ROW_DROPDOWN_END_COL);
+  const subcatWidth = subcatEndCol - subcatStartCol + 1;
+  const tickboxCols = DAILY_ACTIVITY_LOG_COLS.ROW_HIGHLIGHT_COLS.map(columnLetterToIndex);
+  const perRowDurationCol = columnLetterToIndex(DAILY_ACTIVITY_LOG_DURATION_COLS.PER_ROW_DURATION_COL);
+  const groupTotalDurationCol = columnLetterToIndex(DAILY_ACTIVITY_LOG_DURATION_COLS.GROUP_TOTAL_DURATION_COL);
+  const numDurationCols = groupTotalDurationCol - perRowDurationCol + 1;
+
+  sheet.getRange(startRow, 1, numRows, colAToL).breakApart();
+  sheet.getRange(startRow, perRowDurationCol, numRows, numDurationCols).breakApart();
+
+  const templateRowNum = endRow + 1 <= sheet.getLastRow() ? endRow + 1 : startRow - 1;
 
   for (let r = startRow; r <= endRow; r++) {
+    tickboxCols.forEach(col => {
+      if (col <= colAToL && (col < subcatStartCol || col > subcatEndCol)) {
+        sheet.getRange(r, col).setValue(false);
+      }
+    });
     sheet.getRange(r, categoryCol).setValue("No Status");
-    sheet.getRange(r, subcategoryCol).setValue("No Status");
-    sheet.getRange(r, activityTypeCol).setValue("No Status");
-    sheet.getRange(r, startHasCol).setValue("No Status");
-    sheet.getRange(r, endHasCol).setValue("No Status");
-    sheet.getRange(r, startTsCol).setValue("");
-    sheet.getRange(r, endTsCol).setValue("");
   }
+
+  if (templateRowNum >= 1) {
+    const templateMerges = sheet.getRange(templateRowNum, 1, 1, colAToL).getMergedRanges();
+    const templateSubRange = sheet.getRange(templateRowNum, subcatStartCol, 1, subcatWidth);
+    for (let r = startRow; r <= endRow; r++) {
+      templateMerges.forEach(mergedRange => {
+        const mergeStartCol = mergedRange.getColumn();
+        const numMergeCols = mergedRange.getNumColumns();
+        if (numMergeCols > 1 && mergeStartCol < subcatStartCol) {
+          sheet.getRange(r, mergeStartCol, 1, numMergeCols).mergeAcross();
+        }
+      });
+      const targetSubRange = sheet.getRange(r, subcatStartCol, 1, subcatWidth);
+      targetSubRange.breakApart();
+      templateSubRange.copyTo(targetSubRange);
+      sheet.getRange(r, subcatStartCol).setValue("No Status");
+    }
+  }
+
+  for (let r = startRow; r <= endRow; r++) {
+    sheet.getRange(r, perRowDurationCol, 1, numDurationCols).mergeAcross();
+  }
+
+  sheet.getRange(startRow, 1, numRows, colAToL)
+    .setBorder(true, true, true, true, true, true, "#ffffff", SpreadsheetApp.BorderStyle.SOLID);
+  sheet.getRange(startRow, perRowDurationCol, numRows, numDurationCols)
+    .setBorder(true, true, true, true, true, true, "#ffffff", SpreadsheetApp.BorderStyle.SOLID);
 
   resequenceDColumnAndSubNumbers(sheet);
 
