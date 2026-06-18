@@ -30,32 +30,6 @@ function applySubcategoryDropdownToGroupRows(sheet, groupStartRow, groupNumRows,
   const dropdownNarrowedNumCols = dropdownEndColIndex - dropdownNarrowedStartColIndex + 1;
 
   const subcategories = getSubcategoriesForCategory(categoryName);
-
-  for (let r = 0; r < groupNumRows; r++) {
-    const actualRow = groupStartRow + r;
-    const narrowedRange = sheet.getRange(actualRow, dropdownNarrowedStartColIndex, 1, dropdownNarrowedNumCols);
-
-    if (subcategories.length > 0) {
-      const validation = SpreadsheetApp.newDataValidation()
-        .requireValueInList(subcategories, true)
-        .setAllowInvalid(false)
-        .build();
-      narrowedRange.setDataValidation(validation);
-      narrowedRange.clearContent();
-      narrowedRange.setValue(subcategories[0]);
-    } else {
-      narrowedRange.clearDataValidations();
-      narrowedRange.clearContent();
-    }
-  }
-}
-
-function applySubcategoryDropdownToGroupRows(sheet, groupStartRow, groupNumRows, categoryName) {
-  const dropdownNarrowedStartColIndex = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.GROUP_ROW_DROPDOWN_NARROWED_START_COL);
-  const dropdownEndColIndex = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.GROUP_ROW_DROPDOWN_END_COL);
-  const dropdownNarrowedNumCols = dropdownEndColIndex - dropdownNarrowedStartColIndex + 1;
-
-  const subcategories = getSubcategoriesForCategory(categoryName);
   const sourceRange = getSubcategorySourceRange(categoryName);
 
   for (let r = 0; r < groupNumRows; r++) {
