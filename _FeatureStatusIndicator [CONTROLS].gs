@@ -37,7 +37,7 @@ function setFeatureNotEnabledWarning(namedRangeKey) {
     .setFontFamily("Lexend")
     .setFontSize(11)
     .setFontWeight("bold")
-    .setFontStyle("italic")
+    .setFontStyle("normal")
     .setFontColor("#faab17")
     .setHorizontalAlignment("center")
     .setVerticalAlignment("middle")
