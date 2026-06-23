@@ -29,9 +29,9 @@ function onControlsEdit(e) {
   handleEnableHighlightingOnSheetsEdit(sheet, row, col, e);
   handleDisableHighlightingOnSheetsEdit(sheet, row, col, e);
 
-  handleTabVisibilityEnableFeature(sheet, row, col, e);
-  handleTabVisibility(sheet, row, col, e);
-  handleTabVisibilityResetToDefault(sheet, row, col, e);
+  handleSheetVisibilityEnableFeature(sheet, row, col, e);
+  handleSheetVisibility(sheet, row, col, e);
+  handleSheetVisibilityResetToDefault(sheet, row, col, e);
 
   handleRguEnableFeature(sheet, row, col, e);
   handleRguUnmergeNow(sheet, row, col, e);
