@@ -1,14 +1,14 @@
-function isTabVisibilityFeatureEnabled() {
+function isSheetVisibilityFeatureEnabled() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const enableFeatureRange = ss.getRangeByName(TAB_VISIBILITY_MANAGER.ENABLE_FEATURE_TICKBOX);
+  const enableFeatureRange = ss.getRangeByName(SHEET_VISIBILITY_MANAGER.ENABLE_FEATURE_TICKBOX);
   if (!enableFeatureRange) return false;
   return enableFeatureRange.getValue() === true;
 }
 
-function getTabVisibilitySheetRows(controlsSheet) {
+function getSheetVisibilitySheetRows(controlsSheet) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheetListRange = ss.getRangeByName(TAB_VISIBILITY_MANAGER.SHEET_LIST_CELL);
-  const resetRange = ss.getRangeByName(TAB_VISIBILITY_MANAGER.RESET_TO_DEFAULT_TICKBOX);
+  const sheetListRange = ss.getRangeByName(SHEET_VISIBILITY_MANAGER.SHEET_LIST_CELL);
+  const resetRange = ss.getRangeByName(SHEET_VISIBILITY_MANAGER.RESET_TO_DEFAULT_TICKBOX);
   if (!sheetListRange || !resetRange) return [];
 
   const startRow = sheetListRange.getRow() + 1;
@@ -27,7 +27,7 @@ function getTabVisibilitySheetRows(controlsSheet) {
   return entries;
 }
 
-function setTabVisibilityRichResult(controlsSheet, resultRow, mainText, hintText, mainColor) {
+function setSheetVisibilityRichResult(controlsSheet, resultRow, mainText, hintText, mainColor) {
   const resultRange = controlsSheet.getRange(resultRow, 2, 1, 4);
   const fullText = mainText + "\n" + hintText;
   const richText = SpreadsheetApp.newRichTextValue()
@@ -55,9 +55,9 @@ function setTabVisibilityRichResult(controlsSheet, resultRow, mainText, hintText
     .setWrap(true);
 }
 
-function setTabVisibilityResultPlaceholder(controlsSheet, resultRow) {
+function setSheetVisibilityStatusPlaceholder(controlsSheet, resultRow) {
   const resultRange = controlsSheet.getRange(resultRow, 2, 1, 4);
-  resultRange.setValue("✨ Sheet Visibility Result ✨")
+  resultRange.setValue("✨ Sheet Visibility Status ✨")
     .setBackground("#434343")
     .setFontFamily("Lexend")
     .setFontSize(11)
@@ -69,14 +69,14 @@ function setTabVisibilityResultPlaceholder(controlsSheet, resultRow) {
     .setWrap(true);
 }
 
-function handleTabVisibility(controlsSheet, row, col, e) {
+function handleSheetVisibility(controlsSheet, row, col, e) {
   if (!e) return;
   const isVisible = (e.value === "TRUE" || e.value === true);
   const isHidden = (e.value === "FALSE" || e.value === false || e.value === "");
   if (!isVisible && !isHidden) return;
 
-  if (!isTabVisibilityFeatureEnabled()) {
-    setFeatureNotEnabledWarning(TAB_VISIBILITY_MANAGER.FEATURE_STATUS_CELL);
+  if (!isSheetVisibilityFeatureEnabled()) {
+    setFeatureNotEnabledWarning(SHEET_VISIBILITY_MANAGER.FEATURE_STATUS_CELL);
     return;
   }
 
@@ -84,18 +84,18 @@ function handleTabVisibility(controlsSheet, row, col, e) {
   const controlsSheetObj = ss.getSheetByName(CONTROLS_SHEET_NAME);
   if (!controlsSheetObj) return;
 
-  const entries = getTabVisibilitySheetRows(controlsSheetObj);
-  const matchedEntry = entries.find(entry => entry.tickboxRow === row && col === 4);
+  const entries = getSheetVisibilitySheetRows(controlsSheetObj);
+  const matchedEntry = entries.find(entry => entry.tickboxRow === row && col === 5);
   if (!matchedEntry) return;
 
   const targetSheet = ss.getSheetByName(matchedEntry.sheetName);
 
   if (!targetSheet) {
-    setTabVisibilityRichResult(controlsSheetObj, matchedEntry.resultRow, "❌ Sheet not found: " + matchedEntry.sheetName, "", "#ff0000");
+    setSheetVisibilityRichResult(controlsSheetObj, matchedEntry.resultRow, "❌ Sheet not found: " + matchedEntry.sheetName, "", "#ff0000");
     return;
   }
 
-  const linkCell = controlsSheetObj.getRange(matchedEntry.tickboxRow, 5);
+  const linkCell = controlsSheetObj.getRange(matchedEntry.tickboxRow, 6);
 
   if (isVisible) {
     targetSheet.showSheet();
@@ -114,7 +114,7 @@ function handleTabVisibility(controlsSheet, row, col, e) {
       .setBackground("#000000")
       .setHorizontalAlignment("center")
       .setVerticalAlignment("middle");
-    setTabVisibilityRichResult(controlsSheetObj, matchedEntry.resultRow, "✅ Sheet is now visible", "Untick the checkbox to hide this sheet again", "#00ff00");
+    setSheetVisibilityRichResult(controlsSheetObj, matchedEntry.resultRow, "✅ Sheet is now visible", "Untick the checkbox to hide this sheet again", "#00ff00");
   } else {
     targetSheet.hideSheet();
     linkCell.setValue("HIDDEN")
@@ -125,46 +125,46 @@ function handleTabVisibility(controlsSheet, row, col, e) {
       .setBackground("#000000")
       .setHorizontalAlignment("center")
       .setVerticalAlignment("middle");
-    setTabVisibilityRichResult(controlsSheetObj, matchedEntry.resultRow, "🚫 Sheet is now hidden", "Tick the checkbox to make this sheet visible again", "#ff0000");
+    setSheetVisibilityRichResult(controlsSheetObj, matchedEntry.resultRow, "🚫 Sheet is now hidden", "Tick the checkbox to make this sheet visible again", "#ff0000");
   }
 }
 
-function handleTabVisibilityEnableFeature(controlsSheet, row, col, e) {
+function handleSheetVisibilityEnableFeature(controlsSheet, row, col, e) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const enableFeatureRange = ss.getRangeByName(TAB_VISIBILITY_MANAGER.ENABLE_FEATURE_TICKBOX);
+  const enableFeatureRange = ss.getRangeByName(SHEET_VISIBILITY_MANAGER.ENABLE_FEATURE_TICKBOX);
   if (!enableFeatureRange) return;
   if (row !== enableFeatureRange.getRow() || col !== enableFeatureRange.getColumn()) return;
   if (!e || (e.value !== "TRUE" && e.value !== true && e.value !== "FALSE" && e.value !== false)) return;
 
   const isEnabled = (e.value === "TRUE" || e.value === true);
-  setFeatureStatusCell(TAB_VISIBILITY_MANAGER.FEATURE_STATUS_CELL, isEnabled);
+  setFeatureStatusCell(SHEET_VISIBILITY_MANAGER.FEATURE_STATUS_CELL, isEnabled);
 }
 
-function handleTabVisibilityResetToDefault(controlsSheet, row, col, e) {
+function handleSheetVisibilityResetToDefault(controlsSheet, row, col, e) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const resetRange = ss.getRangeByName(TAB_VISIBILITY_MANAGER.RESET_TO_DEFAULT_TICKBOX);
+  const resetRange = ss.getRangeByName(SHEET_VISIBILITY_MANAGER.RESET_TO_DEFAULT_TICKBOX);
   if (!resetRange) return;
   if (row !== resetRange.getRow() || col !== resetRange.getColumn()) return;
   if (!e || (e.value !== "TRUE" && e.value !== true)) return;
 
-  initTabVisibilityResultCells();
+  initSheetVisibilityDefaults();
   resetRange.setValue(false);
 }
 
-function initTabVisibilityResultCells() {
+function initSheetVisibilityDefaults() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const controlsSheetObj = ss.getSheetByName(CONTROLS_SHEET_NAME);
   if (!controlsSheetObj) return;
 
-  const entries = getTabVisibilitySheetRows(controlsSheetObj);
+  const entries = getSheetVisibilitySheetRows(controlsSheetObj);
 
   entries.forEach(entry => {
     const targetSheet = ss.getSheetByName(entry.sheetName);
     if (targetSheet) targetSheet.hideSheet();
 
-    controlsSheetObj.getRange(entry.tickboxRow, 4).setValue(false);
+    controlsSheetObj.getRange(entry.tickboxRow, 5).setValue(false);
 
-    const linkCell = controlsSheetObj.getRange(entry.tickboxRow, 5);
+    const linkCell = controlsSheetObj.getRange(entry.tickboxRow, 6);
     linkCell.setValue("HIDDEN")
       .setFontColor("#ff0000")
       .setFontWeight("bold")
@@ -174,14 +174,14 @@ function initTabVisibilityResultCells() {
       .setHorizontalAlignment("center")
       .setVerticalAlignment("middle");
 
-    setTabVisibilityResultPlaceholder(controlsSheetObj, entry.resultRow);
+    setSheetVisibilityStatusPlaceholder(controlsSheetObj, entry.resultRow);
   });
 
-  const enableFeatureRange = ss.getRangeByName(TAB_VISIBILITY_MANAGER.ENABLE_FEATURE_TICKBOX);
+  const enableFeatureRange = ss.getRangeByName(SHEET_VISIBILITY_MANAGER.ENABLE_FEATURE_TICKBOX);
   if (enableFeatureRange) enableFeatureRange.setValue(false);
 
-  const resetRange = ss.getRangeByName(TAB_VISIBILITY_MANAGER.RESET_TO_DEFAULT_TICKBOX);
+  const resetRange = ss.getRangeByName(SHEET_VISIBILITY_MANAGER.RESET_TO_DEFAULT_TICKBOX);
   if (resetRange) resetRange.setValue(false);
 
-  setFeatureStatusCell(TAB_VISIBILITY_MANAGER.FEATURE_STATUS_CELL, false);
+  setFeatureStatusCell(SHEET_VISIBILITY_MANAGER.FEATURE_STATUS_CELL, false);
 }
