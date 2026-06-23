@@ -13,19 +13,21 @@ function onControlsEdit(e) {
 
   handleActivityIdBulk(sheet, row, col);
 
-  handleBulkAddEnableFeature(sheet, row, col, e);
-  handleBulkAddRowsAbove(sheet, row, col, e);
-  handleBulkAddRowsAboveActivate(sheet, row, col, e);
-  handleBulkAddResetToDefault(sheet, row, col, e);
+  handleBulkInsertEnableFeature(sheet, row, col, e);
+  handleBulkInsertRowsAbove(sheet, row, col, e);
+  handleBulkInsertUpToEdit(sheet, row, col, e);
+  handleBulkInsertResetToDefault(sheet, row, col, e);
 
-  handleAiTickboxRefresh(sheet, row, col);
+  handleAfrtaEnableFeature(sheet, row, col, e);
+  handleAfrtaApplyNow(sheet, row, col, e);
+  handleAfrtaResetToDefault(sheet, row, col, e);
 
   handleRowStatusEnableFeature(sheet, row, col, e);
   handleResetToDefault(sheet, row, col, e);
   handleEnableHighlighting(sheet, row, col, e);
-  handleClearNow(sheet, row, col, e);
-  handleHighlightOnSheetsEdit(sheet, row, col, e);
-  handleClearFromSheetsEdit(sheet, row, col, e);
+  handleDisableNow(sheet, row, col, e);
+  handleEnableHighlightingOnSheetsEdit(sheet, row, col, e);
+  handleDisableHighlightingOnSheetsEdit(sheet, row, col, e);
 
   handleTabVisibilityEnableFeature(sheet, row, col, e);
   handleTabVisibility(sheet, row, col, e);
