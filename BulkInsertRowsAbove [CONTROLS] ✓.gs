@@ -97,7 +97,7 @@ function fetchBulkInsertCurrentMaxNumber(controlsSheet) {
   const targetSheet = ss.getSheetByName(tabName);
   if (!targetSheet) {
     currentMaxRange.setValue("—");
-    setBulkInsertStatus("❌ Target sheet not found: " + tabName, "#ff0000");
+    setBulkInsertSheetNotFoundStatus(tabName);
     return;
   }
 
@@ -162,7 +162,7 @@ function handleBulkInsertNow(controlsSheet, row, col, e) {
 
   const targetSheet = ss.getSheetByName(tabName);
   if (!targetSheet) {
-    setBulkInsertStatus("❌ Target sheet not found: " + tabName, "#ff0000");
+    setBulkInsertSheetNotFoundStatus(tabName);
     insertNowRange.setValue(false);
     return;
   }
@@ -176,7 +176,6 @@ function handleBulkInsertNow(controlsSheet, row, col, e) {
 function executeBulkInsertRowsAbove(controlsSheet, targetSheet, currentMax, targetNumber) {
   const rowsToInsert = targetNumber - currentMax;
   const topDataRow = BULK_INSERT_ROWS_ABOVE.TARGET_TAB_TOP_DATA_ROW;
-  const incrementColIndex = columnLetterToIndex(BULK_INSERT_ROWS_ABOVE.TARGET_TAB_INCREMENT_COL);
   const lastCol = targetSheet.getLastColumn();
 
   clearRowStatusHighlight(targetSheet);
@@ -196,11 +195,7 @@ function executeBulkInsertRowsAbove(controlsSheet, targetSheet, currentMax, targ
     targetSheet.getRange(topDataRow, m.getColumn(), rowsToInsert, m.getNumColumns()).mergeAcross();
   }
 
-  const numbers = [];
-  for (let i = 0; i < rowsToInsert; i++) {
-    numbers.push([targetNumber - i]);
-  }
-  targetSheet.getRange(topDataRow, incrementColIndex, rowsToInsert, 1).setValues(numbers);
+  resequenceDColumnAndSubNumbers(targetSheet);
 
   handleRowStatusHighlight(targetSheet);
 
@@ -370,4 +365,16 @@ function handleBulkInsertUpToEdit(controlsSheet, row, col, e) {
   const insertRowsUpToValue = insertRowsUpToRange.getValue();
   const insertRowsUpTo = typeof insertRowsUpToValue === "number" ? insertRowsUpToValue : null;
   setBulkInsertSheetFoundStatus(tabName, currentMax, insertRowsUpTo);
+}
+
+function setBulkInsertSheetNotFoundStatus(tabName) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const statusRange = ss.getRangeByName(BULK_INSERT_ROWS_ABOVE.STATUS_CELL);
+
+  const lines = [
+    { text: "❌ Target sheet not found: " + tabName, color: "#ff0000" },
+    { text: "ℹ️ Check the sheet name and try again", color: "#faab17" }
+  ];
+
+  writeBulkInsertDetailedStatus(statusRange, lines);
 }
