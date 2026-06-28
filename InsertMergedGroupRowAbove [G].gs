@@ -6,7 +6,7 @@ function handleInsertMergedGroupRowAbove(sheet, row, col) {
   const lastCol = sheet.getLastColumn();
   const labelCol = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.MERGED_GROUP_LABEL_COL);
   const incCol = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.MERGED_GROUP_INCREMENT_NUMBER);
-  const sharedCols = DAILY_ACTIVITY_LOG_COLS.MERGED_GROUP_SHARED_MERGE_COLS.map(columnLetterToIndex);
+  const sharedCols = DAILY_ACTIVITY_LOG_COLS.GROUP_VERTICAL_MERGE_COLS.map(columnLetterToIndex);
   const groupTotalCol = columnLetterToIndex(DAILY_ACTIVITY_LOG_DURATION_COLS.GROUP_TOTAL_DURATION_COL);
 
   const labelMerges = sheet.getRange(row, labelCol).getMergedRanges();
