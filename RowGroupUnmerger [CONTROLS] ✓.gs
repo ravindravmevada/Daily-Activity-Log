@@ -323,7 +323,7 @@ function executeRowGroupUnmerge(sheet, startRow, endRow) {
   sheet.getRange(startRow, perRowDurationCol, numRows, numDurationCols)
     .setBorder(true, true, true, true, true, true, "#ffffff", SpreadsheetApp.BorderStyle.SOLID);
 
-  resequenceDColumnAndSubNumbers(sheet);
+  resequenceActivityNumbers(sheet);
 
   for (let r = startRow; r <= endRow; r++) {
     updateRowDuration(sheet, r);
