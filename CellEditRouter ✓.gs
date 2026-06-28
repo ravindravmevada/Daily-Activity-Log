@@ -40,6 +40,7 @@ function routeDailyLogTickbox(sheet, row, col) {
 
   if (col === createSubGroupCol) {
     handleCreateSubMergedGroup(sheet, row, col);
+    SpreadsheetApp.flush();
     resequenceActivityNumbers(sheet);
     return;
   }
