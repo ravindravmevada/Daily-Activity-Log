@@ -6,7 +6,7 @@ function onActivityNotesFixRestoreTickboxesEdit(e) {
   const row = e.range.getRow();
   const col = e.range.getColumn();
 
-  if (!SHEET_NAMES.DAILY_ACTIVITY_LOG.some(name => sheetName.includes(name))) return;
+  if (!isDailyLogSheet(sheetName)) return;
 
   const aiFixCol = columnLetterToIndex(ACTIVITY_NOTES_AI_FIX_AND_RESTORE.TICKBOX_COL);
   const aiRestoreCol = columnLetterToIndex(ACTIVITY_NOTES_AI_FIX_AND_RESTORE.UNDO_TICKBOX_COL);
