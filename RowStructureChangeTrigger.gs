@@ -4,8 +4,8 @@ function onChange(e) {
   const sheet = e.source.getActiveSheet();
   const sheetName = sheet.getName();
 
-  if (SHEET_NAMES.DAILY_ACTIVITY_LOG.some(name => sheetName.includes(name))) {
-    resequenceDColumnAndSubNumbers(sheet);
+  if (isDailyLogSheet(sheetName)) {
+    resequenceActivityNumbers(sheet);
     resequenceActivityIds(sheet);
     if (isRowStatusHighlightEnabled()) handleRowStatusHighlight(sheet);
   }
