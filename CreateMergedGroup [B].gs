@@ -1,152 +1,114 @@
 function handleCreateMergedGroupFromRange(sheet, row, col) {
   const editedCell = sheet.getRange(row, col);
-  const value = editedCell.getValue();
-  if (value !== true) return;
+  if (editedCell.getValue() !== true) return;
 
   const lastRow = sheet.getLastRow();
-  const triggerColRange = sheet.getRange(1, col, lastRow, 1);
-  const triggerValues = triggerColRange.getValues();
+  const triggerValues = sheet.getRange(1, col, lastRow, 1).getValues();
 
   const tickedRows = [];
   for (let i = 0; i < triggerValues.length; i++) {
-    if (triggerValues[i][0] === true) {
-      tickedRows.push(i + 1);
-    }
+    if (triggerValues[i][0] === true) tickedRows.push(i + 1);
   }
-
   if (tickedRows.length < 2) return;
 
   let groupStartRow = Math.min.apply(null, tickedRows);
-  let groupEndRow = Math.max.apply(null, tickedRows);
+  let groupEndRow   = Math.max.apply(null, tickedRows);
 
-  const labelColForExpand = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.GROUP_LABEL_MERGE_START_COL);
+  const labelColStart = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.GROUP_LABEL_MERGE_START_COL);
   for (let i = 0; i < tickedRows.length; i++) {
-    const mr = sheet.getRange(tickedRows[i], labelColForExpand).getMergedRanges();
+    const mr = sheet.getRange(tickedRows[i], labelColStart).getMergedRanges();
     if (mr && mr.length > 0) {
       const m = mr[0];
-      const top = m.getRow();
-      const bottom = m.getRow() + m.getNumRows() - 1;
-      if (top < groupStartRow) groupStartRow = top;
-      if (bottom > groupEndRow) groupEndRow = bottom;
+      if (m.getRow() < groupStartRow)                     groupStartRow = m.getRow();
+      if (m.getRow() + m.getNumRows() - 1 > groupEndRow) groupEndRow   = m.getRow() + m.getNumRows() - 1;
     }
   }
 
   const groupNumRows = groupEndRow - groupStartRow + 1;
 
-  const incrementColIndex = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.INCREMENT_NUMBER);
-  const subIncrementColIndex = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.GROUP_SUB_INCREMENT_COL);
-  const verticalMergeColIndexes = DAILY_ACTIVITY_LOG_COLS.GROUP_VERTICAL_MERGE_COLS.map(columnLetterToIndex);
-  const labelMergeStartColIndex = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.GROUP_LABEL_MERGE_START_COL);
-  const labelMergeEndColIndex = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.GROUP_LABEL_MERGE_END_COL);
-  const labelMergeNumCols = labelMergeEndColIndex - labelMergeStartColIndex + 1;
-  const individualTickboxColIndexes = DAILY_ACTIVITY_LOG_COLS.GROUP_INDIVIDUAL_TICKBOX_COLS.map(columnLetterToIndex);
-  const dropdownNarrowedStartColIndex = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.GROUP_ROW_DROPDOWN_NARROWED_START_COL);
-  const dropdownEndColIndex = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.GROUP_ROW_DROPDOWN_END_COL);
-  const dropdownNarrowedNumCols = dropdownEndColIndex - dropdownNarrowedStartColIndex + 1;
+  const mainNumColIdx     = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.INCREMENT_NUMBER);
+  const subNumColIdx      = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.GROUP_SUB_INCREMENT_COL);
+  const vertMergeColIdxs  = DAILY_ACTIVITY_LOG_COLS.GROUP_VERTICAL_MERGE_COLS.map(columnLetterToIndex);
+  const labelStartColIdx  = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.GROUP_LABEL_MERGE_START_COL);
+  const labelEndColIdx    = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.GROUP_LABEL_MERGE_END_COL);
+  const labelNumCols      = labelEndColIdx - labelStartColIdx + 1;
+  const indTickboxColIdxs = DAILY_ACTIVITY_LOG_COLS.GROUP_INDIVIDUAL_TICKBOX_COLS.map(columnLetterToIndex);
+  const kqStartColIdx     = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.UNMERGED_ROW_DROPDOWN_START_COL);
+  const kqEndColIdx       = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.UNMERGED_ROW_DROPDOWN_END_COL);
+  const kqNumCols         = kqEndColIdx - kqStartColIdx + 1;
+  const perRowColIdx      = columnLetterToIndex(DAILY_ACTIVITY_LOG_DURATION_COLS.PER_ROW_DURATION_COL);
 
-  const rowBelowGroupD = sheet.getRange(groupEndRow + 1, incrementColIndex).getValue();
-  let newGroupDValue = null;
-  if (typeof rowBelowGroupD === "number") {
-    newGroupDValue = rowBelowGroupD + 1;
+  const rowBelowD  = sheet.getRange(groupEndRow + 1, mainNumColIdx).getValue();
+  const newGroupNum = typeof rowBelowD === "number" ? rowBelowD + 1 : null;
+
+  // safely break all merges in group range cols A to kqEnd
+  const groupFullRange = sheet.getRange(groupStartRow, 1, groupNumRows, kqEndColIdx);
+  const existingMerges = groupFullRange.getMergedRanges();
+  for (let i = 0; i < existingMerges.length; i++) {
+    const m = existingMerges[i];
+    sheet.getRange(m.getRow(), m.getColumn(), m.getNumRows(), m.getNumColumns()).breakApart();
   }
 
-  const groupColumnEnd = dropdownEndColIndex;
-  const groupRowRange = sheet.getRange(groupStartRow, 1, groupNumRows, groupColumnEnd);
-  const existingRowMerges = groupRowRange.getMergedRanges();
-  const mergesToRestore = [];
-
-  for (let i = 0; i < existingRowMerges.length; i++) {
-    const m = existingRowMerges[i];
-    const mergeEndCol = m.getColumn() + m.getNumColumns() - 1;
-    if (mergeEndCol > groupColumnEnd) {
-      mergesToRestore.push({
-        startRow: m.getRow(),
-        startCol: m.getColumn(),
-        numRows: m.getNumRows(),
-        numCols: m.getNumColumns()
-      });
-    }
-    m.breakApart();
-  }
-
+  // uncheck all trigger tickboxes
   for (let i = 0; i < tickedRows.length; i++) {
     sheet.getRange(tickedRows[i], col).setValue(false);
   }
 
-  for (let i = 0; i < verticalMergeColIndexes.length; i++) {
-    const mergeColIndex = verticalMergeColIndexes[i];
-    const targetRange = sheet.getRange(groupStartRow, mergeColIndex, groupNumRows, 1);
-    targetRange.merge();
-    targetRange.setVerticalAlignment("middle");
+  // vertical merge A B C D
+  for (let i = 0; i < vertMergeColIdxs.length; i++) {
+    const r = sheet.getRange(groupStartRow, vertMergeColIdxs[i], groupNumRows, 1);
+    r.merge();
+    r.setVerticalAlignment("middle");
   }
 
-  const labelMergeRange = sheet.getRange(groupStartRow, labelMergeStartColIndex, groupNumRows, labelMergeNumCols);
-  labelMergeRange.merge();
-  labelMergeRange.setVerticalAlignment("middle");
+  // merge E-F category label
+  const labelRange = sheet.getRange(groupStartRow, labelStartColIdx, groupNumRows, labelNumCols);
+  labelRange.merge();
+  labelRange.setVerticalAlignment("middle");
 
-  if (newGroupDValue !== null) {
-    sheet.getRange(groupStartRow, incrementColIndex).setValue(newGroupDValue);
-  }
+  // set main group number
+  if (newGroupNum !== null) sheet.getRange(groupStartRow, mainNumColIdx).setValue(newGroupNum);
 
+  // set G H I tickboxes with correct colors
   const tickboxValidation = SpreadsheetApp.newDataValidation().requireCheckbox().setAllowInvalid(false).build();
-  for (let i = 0; i < individualTickboxColIndexes.length; i++) {
-    const tickboxColIndex = individualTickboxColIndexes[i];
-    const tickboxColLetter = DAILY_ACTIVITY_LOG_COLS.GROUP_INDIVIDUAL_TICKBOX_COLS[i];
-    const tickboxRange = sheet.getRange(groupStartRow, tickboxColIndex, groupNumRows, 1);
-    tickboxRange.setDataValidation(tickboxValidation);
-    tickboxRange.setValue(false);
-
-    if (tickboxColLetter === "G") {
-      tickboxRange.setFontColor("#ff6d01");
-    } else if (tickboxColLetter === "H") {
-      tickboxRange.setFontColor("#f7ef00");
-    }
+  const tickboxColors     = { "G": "#ff6d01", "H": "#34a853", "I": "#f7ef00" };
+  for (let i = 0; i < indTickboxColIdxs.length; i++) {
+    const colIdx    = indTickboxColIdxs[i];
+    const colLetter = DAILY_ACTIVITY_LOG_COLS.GROUP_INDIVIDUAL_TICKBOX_COLS[i];
+    const r         = sheet.getRange(groupStartRow, colIdx, groupNumRows, 1);
+    r.setDataValidation(tickboxValidation);
+    r.setValue(false);
+    r.setFontColor(tickboxColors[colLetter] || "#ffffff");
+    r.setBorder(true, true, true, true, true, true, "#ffffff", SpreadsheetApp.BorderStyle.SOLID);
   }
 
-  const groupDForSubNumbers = newGroupDValue !== null ? newGroupDValue : sheet.getRange(groupStartRow, incrementColIndex).getValue();
-  const subIncrementRange = sheet.getRange(groupStartRow, subIncrementColIndex, groupNumRows, 1);
-  subIncrementRange.clearDataValidations();
+  // J sub numbers will be set by resequenceActivityNumbers after this function
+  // just clear J and apply styling for now
+  const groupNum    = newGroupNum !== null ? newGroupNum : sheet.getRange(groupStartRow, mainNumColIdx).getValue();
+  const subNumRange = sheet.getRange(groupStartRow, subNumColIdx, groupNumRows, 1);
+  subNumRange.clearDataValidations();
+  subNumRange.clearContent();
+  subNumRange.setNumberFormat('@');
+  subNumRange.setFontWeight("bold").setFontColor("#f7ef00");
+  subNumRange.setBorder(true, true, true, true, true, true, "#ffffff", SpreadsheetApp.BorderStyle.SOLID);
+
+  // K-Q = ONE horizontal merge per row (Activity dropdown)
   for (let r = 0; r < groupNumRows; r++) {
-    const positionFromBottom = groupNumRows - r;
-    const subNumber = parseFloat(groupDForSubNumbers + "." + positionFromBottom);
-    sheet.getRange(groupStartRow + r, subIncrementColIndex).setValue(subNumber);
-  }
-  subIncrementRange.setFontWeight("bold");
-  subIncrementRange.setFontColor("#f7ef00");
-
-  for (let r = 0; r < groupNumRows; r++) {
-    const actualRow = groupStartRow + r;
-    const narrowedRange = sheet.getRange(actualRow, dropdownNarrowedStartColIndex, 1, dropdownNarrowedNumCols);
-    narrowedRange.merge();
+    const kqRange = sheet.getRange(groupStartRow + r, kqStartColIdx, 1, kqNumCols);
+    kqRange.merge();
+    kqRange.clearDataValidations();
+    kqRange.clearContent();
+    kqRange.setFontWeight('normal').setFontColor('#ffffff').setFontSize(11);
+    kqRange.setHorizontalAlignment('center').setVerticalAlignment('middle');
+    kqRange.setBorder(true, true, true, true, false, false, "#ffffff", SpreadsheetApp.BorderStyle.SOLID);
   }
 
-  const labelCellValue = sheet.getRange(groupStartRow, labelMergeStartColIndex).getValue();
-  if (labelCellValue && labelCellValue !== "") {
-    applySubcategoryDropdownToGroupRows(sheet, groupStartRow, groupNumRows, labelCellValue);
+  // apply activity dropdown from category label
+  const labelValue = sheet.getRange(groupStartRow, labelStartColIdx).getValue();
+  if (labelValue && labelValue !== "") {
+    applyActivityDropdownToGroupRows(sheet, groupStartRow, groupNumRows, labelValue);
   }
 
-  for (let i = 0; i < mergesToRestore.length; i++) {
-    const m = mergesToRestore[i];
-    for (let r = 0; r < m.numRows; r++) {
-      const restoreRange = sheet.getRange(m.startRow + r, m.startCol, 1, m.numCols);
-      restoreRange.merge();
-    }
-  }
-
-  for (let i = 0; i < individualTickboxColIndexes.length; i++) {
-    const tickboxColIndex = individualTickboxColIndexes[i];
-    const tickboxRange = sheet.getRange(groupStartRow, tickboxColIndex, groupNumRows, 1);
-    tickboxRange.setBorder(true, true, true, true, true, true, "#ffffff", SpreadsheetApp.BorderStyle.SOLID);
-  }
-
-  const subBorderRange = sheet.getRange(groupStartRow, subIncrementColIndex, groupNumRows, 1);
-  subBorderRange.setBorder(true, true, true, true, true, true, "#ffffff", SpreadsheetApp.BorderStyle.SOLID);
-
-  for (let r = 0; r < groupNumRows; r++) {
-    const actualRow = groupStartRow + r;
-    const narrowedRange = sheet.getRange(actualRow, dropdownNarrowedStartColIndex, 1, dropdownNarrowedNumCols);
-    narrowedRange.setBorder(true, true, true, true, false, false, "#ffffff", SpreadsheetApp.BorderStyle.SOLID);
-  }
-
-  updateRowDuration(sheet, groupStartRow);
+  // merge AP across full main group range
+  updateMainGroupDuration(sheet, groupStartRow, groupNumRows);
 }
