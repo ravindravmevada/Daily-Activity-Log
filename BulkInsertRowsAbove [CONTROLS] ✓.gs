@@ -195,7 +195,7 @@ function executeBulkInsertRowsAbove(controlsSheet, targetSheet, currentMax, targ
     targetSheet.getRange(topDataRow, m.getColumn(), rowsToInsert, m.getNumColumns()).mergeAcross();
   }
 
-  resequenceDColumnAndSubNumbers(targetSheet);
+  resequenceActivityNumbers(targetSheet);
 
   handleRowStatusHighlight(targetSheet);
 
