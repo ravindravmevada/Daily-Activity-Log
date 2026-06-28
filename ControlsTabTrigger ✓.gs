@@ -7,7 +7,15 @@ function onControlsEdit(e) {
   if (sheetName !== CONTROLS_SHEET_NAME) return;
 
   handleAdmEnableFeature(sheet, row, col, e);
+  handleAdmRefreshTargetSheet(sheet, row, col, e);
+  handleAdmRefreshApplyTo(sheet, row, col, e);
+  handleAdmRefreshStartRow(sheet, row, col, e);
+  handleAdmRefreshEndRow(sheet, row, col, e);
   handleAdmRefreshNow(sheet, row, col, e);
+  handleAdmRebuildTargetSheet(sheet, row, col, e);
+  handleAdmRebuildApplyTo(sheet, row, col, e);
+  handleAdmRebuildStartRow(sheet, row, col, e);
+  handleAdmRebuildEndRow(sheet, row, col, e);
   handleAdmRebuildNow(sheet, row, col, e);
   handleAdmResetToDefault(sheet, row, col, e);
 
@@ -34,6 +42,9 @@ function onControlsEdit(e) {
   handleSheetVisibilityResetToDefault(sheet, row, col, e);
 
   handleRguEnableFeature(sheet, row, col, e);
+  handleRguTargetSheet(sheet, row, col, e);
+  handleRguStartRow(sheet, row, col, e);
+  handleRguEndRow(sheet, row, col, e);
   handleRguUnmergeNow(sheet, row, col, e);
   handleRguResetToDefault(sheet, row, col, e);
 
