@@ -40,7 +40,8 @@ function handleActivityCascade(sheet, row, col) {
 
 // ── apply Activity dropdown to main group rows (bottom to top) ───────────────
 function applyActivityDropdownToGroupRows(sheet, startRow, numRows, categoryName) {
-  const kqStartCol    = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.UNMERGED_ROW_DROPDOWN_START_COL);
+  // Inside a main group, activity dropdown is K-Q (narrowed — G-J are tickboxes+sub-number)
+  const kqStartCol    = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.GROUP_ROW_DROPDOWN_NARROWED_START_COL);
   const kqEndCol      = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.UNMERGED_ROW_DROPDOWN_END_COL);
   const kqNumCols     = kqEndCol - kqStartCol + 1;
   const klStartCol    = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.SUB_GROUP_LABEL_MERGE_START_COL);
@@ -53,25 +54,44 @@ function applyActivityDropdownToGroupRows(sheet, startRow, numRows, categoryName
   const activities     = getActivitiesForCategory(categoryName);
   const firstActivity  = activities.length > 0 ? activities[0] : '';
 
-  const visited = new Set();
+  // check if any H sub-groups exist in this group
+  let hasSubGroups = false;
+  for (let r = 0; r < numRows; r++) {
+    const klMerges = sheet.getRange(startRow + r, klStartCol).getMergedRanges();
+    if (klMerges.length > 0 && klMerges[0].getNumRows() > 1) { hasSubGroups = true; break; }
+  }
 
-  // scan BOTTOM TO TOP
+  if (!hasSubGroups) {
+    // ── FAST PATH: no sub-groups — apply to entire K-Q range in one batch ───
+    const fullKqRange = sheet.getRange(startRow, kqStartCol, numRows, kqNumCols);
+    if (actSourceRange && firstActivity !== '') {
+      const actValidation = SpreadsheetApp.newDataValidation()
+        .requireValueInRange(actSourceRange, true)
+        .setAllowInvalid(false)
+        .build();
+      fullKqRange.setDataValidation(actValidation);
+      fullKqRange.setValue(firstActivity);
+    } else {
+      fullKqRange.clearDataValidations();
+      fullKqRange.clearContent();
+    }
+    return;
+  }
+
+  // ── SLOW PATH: H sub-groups exist — handle row by row ────────────────────
+  const visited = new Set();
   for (let r = numRows - 1; r >= 0; r--) {
     const actualRow = startRow + r;
     if (visited.has(actualRow)) continue;
 
-    // check if K-L is vertically merged (H sub-group exists)
     const klMerges   = sheet.getRange(actualRow, klStartCol).getMergedRanges();
     const isSubGroup = klMerges.length > 0 && klMerges[0].getNumRows() > 1;
 
     if (isSubGroup) {
       const subStart = klMerges[0].getRow();
       const subSize  = klMerges[0].getNumRows();
-
-      // mark all sub-group rows as visited
       for (let sr = subStart; sr < subStart + subSize; sr++) visited.add(sr);
 
-      // K-L = first activity of new category
       const klRange = sheet.getRange(subStart, klStartCol, subSize, klNumCols);
       if (actSourceRange && firstActivity !== '') {
         const actValidation = SpreadsheetApp.newDataValidation()
@@ -85,41 +105,30 @@ function applyActivityDropdownToGroupRows(sheet, startRow, numRows, categoryName
         klRange.clearContent();
       }
 
-      // P-Q = first phase of that first activity (cascade from K-L)
       const phaseSourceRange = getActivityPhaseSourceRange(firstActivity);
       const phases           = getActivityPhasesForActivity(firstActivity);
       const firstPhase       = phases.length > 0 ? phases[0] : '';
-
-      for (let sr = subStart; sr < subStart + subSize; sr++) {
-        const phaseRange = sheet.getRange(sr, phaseStartCol, 1, phaseNumCols);
-        if (phaseSourceRange && firstPhase !== '') {
-          const phaseValidation = SpreadsheetApp.newDataValidation()
-            .requireValueInRange(phaseSourceRange, true)
-            .setAllowInvalid(false)
-            .build();
-          phaseRange.setDataValidation(phaseValidation);
-          phaseRange.setValue(firstPhase);
-        } else {
-          phaseRange.clearDataValidations();
-          phaseRange.clearContent();
-        }
+      const phaseRange       = sheet.getRange(subStart, phaseStartCol, subSize, phaseNumCols);
+      if (phaseSourceRange && firstPhase !== '') {
+        const phaseValidation = SpreadsheetApp.newDataValidation()
+          .requireValueInRange(phaseSourceRange, true)
+          .setAllowInvalid(false)
+          .build();
+        phaseRange.setDataValidation(phaseValidation);
+        phaseRange.setValue(firstPhase);
+      } else {
+        phaseRange.clearDataValidations();
+        phaseRange.clearContent();
       }
-
     } else {
-      // K-Q single merge — no sub-group
       visited.add(actualRow);
       const kqRange = sheet.getRange(actualRow, kqStartCol, 1, kqNumCols);
-      kqRange.setFontWeight('normal').setFontColor('#ffffff').setFontSize(11);
-      kqRange.setHorizontalAlignment('center').setVerticalAlignment('middle');
-      kqRange.setBorder(true, true, true, true, false, false, '#ffffff', SpreadsheetApp.BorderStyle.SOLID);
-
       if (actSourceRange && firstActivity !== '') {
         const actValidation = SpreadsheetApp.newDataValidation()
           .requireValueInRange(actSourceRange, true)
           .setAllowInvalid(false)
           .build();
         kqRange.setDataValidation(actValidation);
-        kqRange.clearContent();
         kqRange.setValue(firstActivity);
       } else {
         kqRange.clearDataValidations();
@@ -190,28 +199,23 @@ function applyActivityDropdownToUnmergedRow(sheet, row, categoryName) {
 
 // ── apply Activity Phase dropdown to sub-group rows (P-Q per row) ─────────────
 function applyActivityPhaseDropdownToSubGroupRows(sheet, startRow, numRows, activityName) {
-  const phaseStartCol = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.ACTIVITY_PHASE_DROPDOWN_START_COL);
-  const phaseEndCol   = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.ACTIVITY_PHASE_DROPDOWN_END_COL);
-  const phaseNumCols  = phaseEndCol - phaseStartCol + 1;
-  const sourceRange   = getActivityPhaseSourceRange(activityName);
-  const phases        = getActivityPhasesForActivity(activityName);
+  const phaseStartCol  = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.ACTIVITY_PHASE_DROPDOWN_START_COL);
+  const phaseEndCol    = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.ACTIVITY_PHASE_DROPDOWN_END_COL);
+  const phaseNumCols   = phaseEndCol - phaseStartCol + 1;
+  const sourceRange    = getActivityPhaseSourceRange(activityName);
+  const phases         = getActivityPhasesForActivity(activityName);
+  const fullPhaseRange = sheet.getRange(startRow, phaseStartCol, numRows, phaseNumCols);
 
-  for (let r = 0; r < numRows; r++) {
-    const actualRow  = startRow + r;
-    const phaseRange = sheet.getRange(actualRow, phaseStartCol, 1, phaseNumCols);
-
-    if (phases.length > 0 && sourceRange) {
-      const validation = SpreadsheetApp.newDataValidation()
-        .requireValueInRange(sourceRange, true)
-        .setAllowInvalid(false)
-        .build();
-      phaseRange.setDataValidation(validation);
-      phaseRange.clearContent();
-      phaseRange.setValue(phases[0]);
-    } else {
-      phaseRange.clearDataValidations();
-      phaseRange.clearContent();
-    }
+  if (phases.length > 0 && sourceRange) {
+    const validation = SpreadsheetApp.newDataValidation()
+      .requireValueInRange(sourceRange, true)
+      .setAllowInvalid(false)
+      .build();
+    fullPhaseRange.setDataValidation(validation);
+    fullPhaseRange.setValue(phases[0]);
+  } else {
+    fullPhaseRange.clearDataValidations();
+    fullPhaseRange.clearContent();
   }
 }
 
