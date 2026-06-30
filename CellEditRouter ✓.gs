@@ -11,7 +11,6 @@ function routeDailyLogTickbox(sheet, row, col) {
   const subLabelEndCol           = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.SUB_GROUP_LABEL_MERGE_END_COL);
   const phaseStartCol            = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.ACTIVITY_PHASE_DROPDOWN_START_COL);
   const phaseEndCol              = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.ACTIVITY_PHASE_DROPDOWN_END_COL);
-  const mainNumCol               = columnLetterToIndex(DAILY_ACTIVITY_LOG_COLS.INCREMENT_NUMBER);
   const activityTypeCol          = columnLetterToIndex(DAILY_ACTIVITY_LOG_DURATION_COLS.ACTIVITY_TYPE_COL);
   const hasNotesCol              = columnLetterToIndex(DAILY_ACTIVITY_LOG_ACTIVITY_NOTES.HAS_NOTES_COL);
   const loggedFromCol            = columnLetterToIndex(DEVICE_VIA_CASCADE.LOGGED_FROM_COL);
@@ -26,7 +25,7 @@ function routeDailyLogTickbox(sheet, row, col) {
   if (col === createGroupCol) {
     handleCreateMergedGroupFromRange(sheet, row, col);
     SpreadsheetApp.flush();
-    resequenceActivityNumbers(sheet);
+    resequenceDNumbers(sheet);
     return;
   }
 
@@ -39,9 +38,10 @@ function routeDailyLogTickbox(sheet, row, col) {
   }
 
   if (col === createSubGroupCol) {
-    handleCreateSubMergedGroup(sheet, row, col);
+    const subGroup = handleCreateSubMergedGroup(sheet, row, col);
     SpreadsheetApp.flush();
-    resequenceActivityNumbers(sheet);
+    resequenceJNumbers(sheet);
+    if (subGroup) writeONumbersForSubGroup(sheet, subGroup.startRow, subGroup.numRows);
     return;
   }
 
@@ -68,12 +68,6 @@ function routeDailyLogTickbox(sheet, row, col) {
   // ── Activity label changed (K-L) → cascade to Phase ──────────────────────
   if (col >= subLabelStartCol && col <= subLabelEndCol) {
     handleActivityCascade(sheet, row, col);
-    return;
-  }
-
-  // ── Main number col D ─────────────────────────────────────────────────────
-  if (col === mainNumCol) {
-    resequenceActivityNumbers(sheet);
     return;
   }
 
